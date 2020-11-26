@@ -10,23 +10,8 @@ module.exports = {
         lineNumbers: true
     },
     themeConfig: {
-        nav: [{
-            text: 'Java', link: '/java/'
-        }],
-        sidebar: {'/java/':[
-            {
-                  title: '集合',
-		  path: '/collection/',
-                  collapsable: true,
-                  children:[
-                    {
-			title: 'ArrayList',
-			path: '/ArrayList.md'
-		    }
-                  ]
-             },
-            ]
-        },
+        nav: require('./nav.js'),
+        sidebar: require('./sidebar.js'),
         sidebarDepth: 2,
         lastUpdated: 'Last Updated',
         searchMaxSuggestoins: 10,
