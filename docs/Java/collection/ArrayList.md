@@ -1,3 +1,14 @@
+---
+title: ArrayList
+date: 2020-11-30
+categories:
+ - collection
+tags:
+ - collection
+---
+
+
+
 ### ArrayList特性
 
 - 底层使用数组来实现，所以查询效率高

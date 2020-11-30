@@ -9,9 +9,17 @@ module.exports = {
     markdown: {
         lineNumbers: true
     },
+    theme: 'reco',
     themeConfig: {
+	author: 'Connor',
+	blogConfig: {
+	    java: {
+		location: 2,
+		text: 'Java'
+	    } 
+	},
         nav: require('./nav.js'),
-        sidebar: require('./sidebar.js'),
+	sidebar: require('./sidebar'),
         sidebarDepth: 2,
         lastUpdated: 'Last Updated',
         searchMaxSuggestoins: 10,

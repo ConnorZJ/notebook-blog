@@ -1,3 +1,3 @@
 module.exports = {
-	'/java/': require('../java/collection/sidebar')
+	'/java/collection': require('../java/collection/sidebar')
 }

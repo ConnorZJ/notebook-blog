@@ -1,6 +1,11 @@
 module.exports = [
 	{ 
 		text: 'Java',
-		link: '/java/'
+		items: [
+			{
+				'text': 'collection',
+				'link': '/java/collection/'
+			}
+		]
 	}
 ];

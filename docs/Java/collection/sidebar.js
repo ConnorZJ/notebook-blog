@@ -1,13 +1,5 @@
-module.exports = [{
-	title: 'HashMap',
-	collapsable: true,
-	children: [
-		'/java/collection/HashMap'
-	]
-}, {
-	title: 'ArrayList',
-	collapsable: true,
-	children: [
-		'/java/collection/ArrayList'
-	]
-}]
+module.exports = [
+	{ title: 'collection', collapsable: false, children: [
+		{ title: 'HashMap', path: '/java/collection/HashMap' }
+	] }
+]
