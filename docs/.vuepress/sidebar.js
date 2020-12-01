@@ -1,3 +1,11 @@
 module.exports = {
-	'/java/collection': require('../java/collection/sidebar')
+	'/Java/collection/': 
+	[{
+			title: 'Collection',
+			children: [
+				'HashMap',
+				'ArrayList'
+			]
+		}
+	]
 }

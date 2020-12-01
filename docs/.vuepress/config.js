@@ -11,6 +11,7 @@ module.exports = {
     },
     theme: 'reco',
     themeConfig: {
+	subSidebar: 'auto',
 	author: 'Connor',
 	blogConfig: {
 	    java: {

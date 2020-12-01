@@ -1,4 +1,13 @@
-### HashMap 特性
+---
+title: HashMap
+date: 2020-11-30
+categories:
+ - collection
+tags:
+ - collection
+---
+
+## HashMap 特性
 
 - 一种键值对的数据接口
 - 允许null的key和null的值，且null的key放在第一位
@@ -6,7 +15,7 @@
 - 线程不安全，如果需要线程安全的话，就需要使用ConcurrentHashMap
 - 底层采用数组+链表的方式实现，JDK8之后增加了红黑树
 
-### HashMap初始化
+## HashMap初始化
 
 ```java
 static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
@@ -17,7 +26,7 @@ static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
 第二行的默认**负载因子**，意思是当HashMap的容量达到了**容量*负载因子**的大小后，HashMap就会扩容一次，以便于储存更多的数据。比如说，实例化一个无参的HashMap对象，默认容量是16，负载因子是0.75，那么这个HashMap对象中最多只能储存了16*0.75=12个数据，当要使用put操作增加一个数据的时候，HashMap就会扩容一次。如果制定了一个HashMap的指定大小，又想让这个HashMap能够使用空间最大化的话，就应该将负载因子设置得接近1就可以了。
 
-### HashMap的4个构造方法
+## HashMap的4个构造方法
 
 ```java
 public HashMap() {
@@ -63,7 +72,7 @@ public HashMap(int initialCapacity, float loadFactor) {
 
 
 
-### HashMap的重要方法
+## HashMap的重要方法
 
 ```java
 static final int hash(Object key) {

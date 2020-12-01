@@ -7,16 +7,14 @@ tags:
  - collection
 ---
 
-
-
-### ArrayList特性
+## ArrayList特性
 
 - 底层使用数组来实现，所以查询效率高
 - 实现了 RandomAccess接口，能支持快速访问
 
 
 
-### ArrayList初始化
+## ArrayList初始化
 
 ```java
 private static final int DEFAULT_CAPACITY = 10;
@@ -42,7 +40,7 @@ private int size;
 
 size为ArrayList中实际储存元素的个数
 
-### ArrayList 构造方法
+## ArrayList 构造方法
 
 ```java
 public ArrayList() {
@@ -89,7 +87,7 @@ public ArrayList(Collection<? extends E> c) {
 
 先调用集合的``toArray()``方法，将元素转成Object数组。如果这个Object数组的长度为0，则使elementData为一个空的Object数组。如果这个数组长度大于0，当参数c的类型是ArrayList的话，就直接把数组拷贝给新的ArrayList实例，否则使用``Arrays.copyOf()``方法复制。
 
-### ArrayList的重要方法
+## ArrayList的重要方法
 
 ```java
 public boolean add(E e) {
