@@ -1,10 +1,9 @@
 module.exports = {
     title: 'Slump',
-    description: 'Nothing is True, Everything is Permitted',
+    description: 'Nothing is True, Everything is Permitted.',
     dest: './dist',
     port: '7777',
     head: [
-        ['link', {rel: 'icon', href: '/logo.jpg'}]
     ],
     markdown: {
         lineNumbers: true
@@ -12,7 +11,9 @@ module.exports = {
     theme: 'reco',
     themeConfig: {
 	subSidebar: 'auto',
+	type: 'blog',
 	author: 'Connor',
+	authorAvatar: '/avatar.jpg',
 	blogConfig: {
 	    java: {
 		location: 2,
