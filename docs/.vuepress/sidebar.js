@@ -7,5 +7,11 @@ module.exports = {
 				'ArrayList'
 			]
 		}
-	]
+	],
+	'/Java/jvm/':[{
+		title: 'JVM',
+		children: [
+			'RuntimeDataArea'
+		]
+	}]
 }
