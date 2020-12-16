@@ -10,7 +10,8 @@ module.exports = {
 	],
 	'/Java/jvm/':[{
 		title: 'JVM',
-		children: [
+		children:[
+			'JVM_Base',
 			'RuntimeDataArea'
 		]
 	}]
