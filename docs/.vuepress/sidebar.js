@@ -12,6 +12,7 @@ module.exports = {
 		title: 'JVM',
 		children:[
 			'JVM_Base',
+			'Class_Loader',
 			'RuntimeDataArea'
 		]
 	}]
