@@ -13,6 +13,7 @@ module.exports = {
 		children:[
 			'JVM_Base',
 			'Class_Loader',
+			'Parents_ClassLoader',
 			'RuntimeDataArea'
 		]
 	}]
