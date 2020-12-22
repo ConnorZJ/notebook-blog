@@ -39,7 +39,7 @@ public class PcRegisterTest {
 }
 ```
 
-首先下一个简单的类，其中包括一个main方法，里面定义三个变量，分别是a,b,c。接下来编译这个java文件生成class文件，然后再生成的class文件的路径下使用``javap -v PcRegisterTest``命令，这个命令是能够把编译后的字节码文件反编译，让我们能够看到其内部是如何实现的！
+首先写一个简单的类，其中包括一个main方法，里面定义三个变量，分别是a,b,c。接下来编译这个java文件生成class文件，然后在生成的class文件的路径下使用``javap -v PcRegisterTest``命令，这个命令是能够把编译后的字节码文件反编译，让我们能够看到其内部是如何实现的！
 
 ```
 Classfile /Users/connor/code/out/production/com/xzj/PcRegisterTest.class
@@ -79,5 +79,25 @@ Classfile /Users/connor/code/out/production/com/xzj/PcRegisterTest.class
 
 ## Java虚拟机栈
 
+Java虚拟机栈（Java Virtual Machine Stack），也称Java栈。每个线程创建的时候都会创建一个Java虚拟机栈，其内部保存一个个的栈帧（Stack Frame），对应着一次次的Java方法调用。
 
+与pc寄存器相同的是，Java虚拟机栈的生命周期和线程保持一致。
 
+Java虚拟机栈的作用是：主管Java程序的运行，它保存方法的局部变量（8中基本数据类型、对象的引用地址）、部分结果，并参与方法的调用和返回
+
+### Java虚拟机栈的特点（优点）
+
+- 栈式一种快速有效的分配存储方式，访问速度仅次于pc寄存器。
+- JVM直接对Java栈的操作只有两个：
+  - 每个方法执行，伴随着入栈
+  - 执行结束之后出栈
+- 对于栈来说不存在垃圾回收问题
+
+### Java中可能出现的异常
+
+Java虚拟机规范允许Java栈的大小是动态的或者是固定不变的。
+
+- 如果采用的是固定大小的Java虚拟机栈，那每一次线程的Java虚拟机栈容量可以在线程创建的时候独立选定。如果线程请求分配的栈容量超过Java虚拟机栈允许的最大容量，Java虚拟机栈将会抛出一个StackOverflowError异常。
+- 如果Java虚拟机栈可以动态扩展，并且在尝试扩展的时候无法申请到足够的内存，或者在创建新的线程时没有足够的内存去创建对应的虚拟机栈，那Java虚拟机将会抛出一个OutOfMemoryError异常。
+
+可以使用``-Xss``来指定Java栈的大小
