@@ -14,7 +14,8 @@ module.exports = {
 			'JVM_Base',
 			'Class_Loader',
 			'Parents_ClassLoader',
-			'RuntimeDataArea'
+			'RuntimeDataArea',
+			'StackFrame'
 		]
 	}]
 }
