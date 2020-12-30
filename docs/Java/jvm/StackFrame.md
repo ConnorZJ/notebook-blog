@@ -15,7 +15,7 @@ tags:
 2. 操作数栈
 3. 动态链接
 4. 方法返回地址
-5. 一些附加信息
+5. 一些附加信息（**不一定存在**）
 
 ![](https://connorzj.oss-cn-shenzhen.aliyuncs.com/blog-pic栈帧内部结构.png)
 
