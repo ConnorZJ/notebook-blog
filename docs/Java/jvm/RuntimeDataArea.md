@@ -169,3 +169,12 @@ Java虚拟机规范允许Java栈的大小是动态的或者是固定不变的。
 - 绝大部分的对象的销毁是在新生代中进行的。
 
 ![](https://connorzj.oss-cn-shenzhen.aliyuncs.com/blog-pic/堆空间内存模型.png)
+
+###  对象分配过程
+
+1. new的对象先放在Eden区，此区有大小限制
+2. 当Eden区的空间填满时，程序有需要创建对象，JVM的垃圾回收器将对Eden区进行垃圾回收（Young GC/Minor GC），将Eden区中不再被其他对象所引用的对象进行销毁。再加载新的对象放到Eden区
+3. 然后将Eden中的剩余对象移动到Survivor0区
+4. 如果再次触发垃圾回收，此时上次幸存下来的放在Survivor0区的对象，如果没有回收，就会放到Survivor1区
+5. 如果再次触发垃圾回收，此时会将Survivor1区的放回Survivor0区，之后彼此循环
+6. 在垃圾回收期间，默认转移15次之后就会移动去老年代区，可通过``-XX:MaxTenuringThreshold=<N>``进行设置
