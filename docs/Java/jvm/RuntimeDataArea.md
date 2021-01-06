@@ -178,3 +178,19 @@ Java虚拟机规范允许Java栈的大小是动态的或者是固定不变的。
 4. 如果再次触发垃圾回收，此时上次幸存下来的放在Survivor0区的对象，如果没有回收，就会放到Survivor1区
 5. 如果再次触发垃圾回收，此时会将Survivor1区的放回Survivor0区，之后彼此循环
 6. 在垃圾回收期间，默认转移15次之后就会移动去老年代区，可通过``-XX:MaxTenuringThreshold=<N>``进行设置
+
+## 方法区（Method Area）
+
+### 方法区的基本理解
+
+- 方法区与Java堆一样，是各个线程共享的内存区域。
+- 方法区在JVM启动的时候被创建，并且它的实际的物理内存空间中和Java堆区一样都是不连续的。
+- 方法区的大小，跟堆空间一样，可以选择固定大小或者可扩展。
+- 方法区的大小决定了系统可以保存多少各类，如果系统定义了太多的类，导致方法区溢出，虚拟机同样会抛出内存溢出错误：``java.lang.OutOfMemoryError: PermGen space（JDK7及以前）`` 或``java.lang.OutOfMemoryError: Metaspace(JDK8)``
+- 关闭JVM就会释放这个区域的内存。
+
+### 设置方法区大小的参数
+
+设置初始大小``-XX:MetaspaceSize=n``
+
+设置最大大小``-XX:MaxMetaspaceSize=n``
