@@ -16,7 +16,8 @@ module.exports = {
 			'Parents_ClassLoader',
 			'RuntimeDataArea',
 			'StackFrame',
-			'GarbageCollect'
+			'GarbageCollect',
+			'GarbageCollector'
 		]
 	}]
 }
