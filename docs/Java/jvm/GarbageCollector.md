@@ -45,3 +45,41 @@ Safe Point机制保证了程序执行时，在不太长的时间内就会遇到�
 - 软引用（Soft Reference）：在系统将要发生内存溢出之前，将会把这些对象列入回收范围之中进行第二次回收。如果这次回收后还没有足够的内存，才会抛出内存溢出异常。
 - 弱引用（Weak Reference）：被弱引用关联的对象只能生存到下一次垃圾收集之前。当垃圾收集器工作时，无论内存空间是否足够，都会回收掉被弱引用关联的对象。
 - 虚引用（Phantom Reference）：一个对象是否有虚引用的存在，完全不会对其生存时间构成影响，也无法通过虚引用来获得一个对象的实例。为一个对象设置虚引用关联的唯一目的就是能在这个对象被收集器回收时收到一个系统通知。
+
+## 垃圾收集器
+
+### Serial收集器/Serial Old收集器——串行回收
+
+Serial收集器是最基本、历史最悠久的垃圾收集器。JDK1.3之前回收新生代唯一的选择。Serial收集器作为HotSpot中Client模式下的默认新生代垃圾收集器。
+
+Serial收集器采用复制算法、串行回收和STW机制的方式执行内存回收。
+
+Serial Old收集器同样采用了串行回收和STW机制，内存回收方式使用的是标记-压缩算法。
+
+Serial的**优势**：**简单而高效**（与其他收集器的单线程比较），对于限定单个CPU的环境来说，Serial收集器由于没有线程交互的开销，专心做垃圾收集自然可以获得最高的单线程手机效率。
+
+在HotSpot虚拟机中，使用``-XX:+UseSerialGC``参数可以指定年轻代和老年代都使用串行收集器，等价于新生代用Serial GC，且老年代用Serial Old GC。
+
+### ParNew收集器——并行回收
+
+如果说Serial GC是年轻代中的单线程垃圾收集器，那么ParNew收集器则是Serial收集器的**多线程版本**。Par是Parallel的缩写，New是只能处理新生代。
+
+ParNew收集器除了采用并行回收的方式执行内存回收外，两款垃圾收集器之间几乎没有任何区别。ParNew收集器在年轻代中同样也是采用复制算法、STW机制。
+
+在HotSpot虚拟机中，使用``-XX:+UseParNewGC``手动指定使用ParNew为新生代的垃圾收集器，此处只影响新生代，老年代的收集器不会改变。使用``-XX:ParallelGCThreads=n``限制线程数量，一般默认和CPU的数量相同。
+
+### Parallel Scavenge收集器——高吞吐量
+
+HotSpot的年轻代中出了拥有ParNew收集器是基于并行回收的以外，Parallel Scavenge收集器同样采用了复制算法、并行回收和STW机制。
+
+Parallel Scavenge收集器在JDK1.6时提供了用于执行老年代收集的Parallel Old收集器，用来代替老年代的Serial Old收集器。Parallel Old收集器采用了标记-压缩算法，但同样也是基于并行回收和STW机制。
+
+在HotSpot虚拟机中，使用``-XX:+UseParallelGC``手动指定年轻代使用Parallel并行收集器，使用``+XX:+UseParallelOldGC``手动指定老年代使用Parallel Old并行收集器。在JDK8中，默认使用Parallel和Parallel Old收集器分别进行新生代和老年代的垃圾回收，而且这两个垃圾收集器会**互相激活**，比如显式的指定了使用Parallel Old GC进行老年代的垃圾回收的话，默认也会使用Parallel GC进行新生代的垃圾回收，反之同理。
+
+使用``-XX:ParallelGCThreads=n``设置新生代并行的线程数，在默认情况下，当CPU的数量小于8个的时候，ParallelGCThreads的值等于CPU的数量；但是在CPU的数量大于8的时候，ParallelGCThreads的值等于``3 + ( 5 *  CPU_count / 8 )``。
+
+使用``-XX:MaxGCPauseMillis=n``设置垃圾收集器的最大停顿时间（即STW的时间），单位是毫秒。
+
+使用``-XX:GCTimeRatio=n``设置垃圾收集收件占总时间的比例（=1/(n+1)）。取值范围是（0，100），默认值99，也就是垃圾回收时间不超过1%。
+
+使用``-XX:+UseAdaptiveSizePolicy``设置Parallel Scavenge收集器具有自适应调节策略。在这种模式下，年轻代的大小、Eden和Survivor的比例、晋升老年代的对象年龄等参数会被自动调整，已达到在堆大小、吞吐量和停顿时间之间的平衡点。
