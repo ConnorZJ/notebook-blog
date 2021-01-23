@@ -17,7 +17,7 @@ tags:
 
 ### 工作原理图
 
-![](https://connorzj.oss-cn-shenzhen.aliyuncs.com/blog-pic/Java BIO.png)
+![](https://connorzj.oss-cn-shenzhen.aliyuncs.com/blog-pic/Java_BIO.png)
 
 ### BIO编程简单流程
 

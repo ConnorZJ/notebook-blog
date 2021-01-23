@@ -28,7 +28,7 @@ tags:
 
 ### Java NIO示意图
 
-![](https://connorzj.oss-cn-shenzhen.aliyuncs.com/blog-pic/Java NIO.png)
+![](https://connorzj.oss-cn-shenzhen.aliyuncs.com/blog-pic/Java_NIO.png)
 
 从此图可以看出，一个Server端能启用多个线程，一个线程持有一个Selector对象，一个Selector对象控制多个Channel管道，一个Channel和一个Client客户端之间只有一个Buffer缓冲区，所以数据的读写都是面向Buffer缓冲区的。
 
