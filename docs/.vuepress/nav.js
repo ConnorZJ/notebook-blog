@@ -9,5 +9,9 @@ module.exports = [
 				text: 'JVM', link: '/Java/jvm/'
 			}
 		]
+	},
+	{
+		text: 'Netty',
+		link: '/Netty/'
 	}
 ];

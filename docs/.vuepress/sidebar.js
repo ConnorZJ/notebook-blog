@@ -19,5 +19,12 @@ module.exports = {
 			'GarbageCollect',
 			'GarbageCollector'
 		]
+	}],
+	'/Netty/':[{
+		title: 'Netty',
+		children: [
+			'Java_BIO',
+			'Java_NIO'
+		]
 	}]
 }
