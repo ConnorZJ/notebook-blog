@@ -75,6 +75,8 @@ private int capacity;
 | Position | 位置，下一个要被读/写的元素的索引，每次读写缓冲区数据时都会改变position的值，为下次读写做准备 |
 | Mark     | 标记                                                         |
 
+### 代码示例
+
 以下代码可以做个示例，有兴趣的在IDE中打个断点一步一步看看Buffer的四个参数是如何变化的：
 
 ```java
@@ -104,3 +106,86 @@ public static void main(String[] args) {
 
 }
 ```
+
+## 通道（Channel）
+
+### 基本介绍
+
+1. NIO的通道类似于流，但两者之间有所区别：
+   - 通道可以同时进行读写，而流只能读或者只能写
+   - 通道可以实现异步读写数据
+   - 通道可以从缓冲区读取数据，也可以写数据到缓冲区
+2. BIO的stream是单向的，例如FileInputStream对象只能进行读取数据的操作，而NIO中的通道（Channel）是双向的，可以读操作，也可以写操作。
+3. Channel在NIO中是一个**接口**。
+4. 常用的Channel类有：``FileChannel``、``DatagramChannel``、``ServerSocketChannel``、``SocketChannel``。``FileChannel``用于文件的数据读写，``DatagramChannel``用于UDP的数据读写，``ServerSocketChannel``和``SocketChannel``用于TCP的数据读写。
+
+### 代码示例
+
+```java
+public static void main(String[] args) throws Exception {
+    // 从桌面上随机取一张图片进行复制操作
+    // 获取原图片和被复制图片路径的流
+    FileInputStream fileInputStream = new FileInputStream("/Users/connor/Desktop//64535234_p0.png");
+    FileOutputStream fileOutputStream = new FileOutputStream("/Users/connor/Desktop//64535234_p0_1.png");
+    // 通过流的getChannel()方法获取两个通道
+    FileChannel fileInputStreamChannel = fileInputStream.getChannel();
+    FileChannel fileOutputStreamChannel = fileOutputStream.getChannel();
+    // 创建一个字节类型的缓冲区，并为其分配1024长度
+    ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+    // 每次读取图片的字节到缓冲区，当读返回-1时，表示读完了
+    while (fileInputStreamChannel.read(byteBuffer) > -1) {
+        // 调用flip()方法，从读的状态变为写的状态
+        byteBuffer.flip();
+        // 复制，将缓冲区中的数据写入到管道中
+        fileOutputStreamChannel.write(byteBuffer);
+        // 将缓冲区清空，以便于下一次读取
+        byteBuffer.clear();
+    }
+    // 关闭Closeable对象
+    fileOutputStreamChannel.close();
+    fileInputStreamChannel.close();
+    fileOutputStream.close();
+    fileInputStream.close();
+}
+```
+
+通过以上方法可以实现文件的拷贝，但是FileChannel中还有一个方法，那就是transferTo/transferFrom，甚至能更快地进行复制操作：
+
+```java
+public static void main(String[] args) throws IOException {
+    // 从桌面上随机取一张图片进行复制操作
+    // 获取原图片和被复制图片路径的流
+    FileInputStream fileInputStream = new FileInputStream("/Users/connor/Desktop//64535234_p0.png");
+    FileOutputStream fileOutputStream = new FileOutputStream("/Users/connor/Desktop//64535234_p0_1.png");
+    // 通过流的getChannel()方法获取两个通道
+    FileChannel fileInputStreamChannel = fileInputStream.getChannel();
+    FileChannel fileOutputStreamChannel = fileOutputStream.getChannel();
+    // transferTo同理，在fileInputStreamChannel中调用
+    fileOutputStreamChannel.transferFrom(fileInputStreamChannel,0,fileInputStreamChannel.size());
+    // 关闭Closeable对象
+    fileOutputStreamChannel.close();
+    fileInputStreamChannel.close();
+    fileOutputStream.close();
+    fileInputStream.close();
+}
+```
+
+## Selector（选择器）
+
+### 基本介绍
+
+1. Java的NIO，用非阻塞的IO方式。可以用一个线程，处理多个的客户端连接，就会使用到Selector（选择器）。
+2. Selector能够检测多个注册的通道上是否有事件发生，如果有事件发生，便获取时间然后针对每个事件进行相应的处理。这样就可以只用一个单线程去管理多个通道，也就是管理多个连接和请求。
+3. 只有在连接通道真正有读写事件发生时，才会进行读写，就大大地减少了系统开销，并且不必为每一个连接都创建一个线程，不用去维护多个线程。避免了多个线程之间的上下文切换导致的开销。
+
+### SelectionKey
+
+SelectionKey为Selector中，有一个Channel注册了，就会生成一个SelectionKey对象，在同步非阻塞中，Selector可以通过SelectionKey找到相应的Channel并处理。
+
+SelectionKey在Selector和Channel的注册关系中一共分为四种：
+
+- Int OP_ACCEPT：有新的网络连接可以accept，值为16（1<<4）
+- int OP_CONNECT：代表连接已经建立，值为8(1<<3)
+- int OP_WRITE：代表写操作，值为4(1<<2)
+- int OP_READ：代表读操作，值为1(1<<0)
+
