@@ -100,3 +100,163 @@ I/O复用结合线程池，就是Reactor模式基本设计思想。
 
 1. Reactor：Reactor在一个单独的线程中运行，负责监听和分发事件，分发给适当的处理程序来对IO事件作出反应，它就像公司的电话接线员，它接听来自客户的电话并将线路转移到适当的联系人。
 2. Handlers：处理程序执行I/O事件要完成的实际事件，类似于客户想要与之交谈的公司中的实际官员。Reactor通过调度适当的处理程序来响应I/O事件，处理程序执行非阻塞操作。
+
+
+
+### Reactor单线程
+
+#### 代码实例
+
+根据模型图例，可以得出以下代码
+
+```java
+public class SingleThreadReactor implements Runnable
+{
+
+   // 定义服务器通道、选择器和端口
+   private ServerSocketChannel serverSocketChannel;
+   private Selector selector;
+   private static final int PORT = 6666;
+
+   /**
+    * 在构造方法中，初始化属性
+    *
+    * @throws IOException
+    */
+   public SingleThreadReactor() throws IOException
+   {
+      serverSocketChannel = ServerSocketChannel.open();
+      // 设置非阻塞
+      serverSocketChannel.configureBlocking(false);
+      // 绑定端口
+      serverSocketChannel.socket().bind(new InetSocketAddress(PORT));
+      selector = Selector.open();
+      // 将通道注册到选择器上，监听accept事件，并且新建一个Acceptor对象作为附带对象
+      serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, new Acceptor(serverSocketChannel, selector));
+   }
+
+   @Override
+   public void run()
+   {
+      while (true)
+      {
+         try
+         {
+            int select = selector.select();
+            if (select > 0)
+            {
+               // 取出已发生事件的selectionKeys
+               Set<SelectionKey> selectionKeys = selector.selectedKeys();
+               Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
+               while (keyIterator.hasNext())
+               {
+                  SelectionKey selectionKey = keyIterator.next();
+                  // 使用分发器分发事件
+                  dispatcher(selectionKey);
+                  keyIterator.remove();
+               }
+            }
+         }
+         catch (IOException e)
+         {
+            e.printStackTrace();
+         }
+      }
+   }
+
+   /**
+    * 分发事件
+    *
+    * @param selectionKey
+    */
+   private void dispatcher(SelectionKey selectionKey)
+   {
+      Runnable runnable = (Runnable) selectionKey.attachment();
+      runnable.run();
+   }
+
+   public static void main(String[] args) throws IOException
+   {
+      SingleThreadReactor str = new SingleThreadReactor();
+      str.run();
+   }
+
+}
+```
+
+依据图例，是一个Reactor接受来自客户端的请求，然后通过分发器将请求分发到Acceptor和Handler上。
+
+```java
+public class Acceptor implements Runnable
+{
+   // 定义通道和选择器
+   private ServerSocketChannel serverSocketChannel;
+   private Selector selector;
+
+   /**
+    * 构造方法中，初始化属性
+    *
+    * @param serverSocketChannel
+    * @param selector
+    */
+   public Acceptor(ServerSocketChannel serverSocketChannel, Selector selector)
+   {
+      this.serverSocketChannel = serverSocketChannel;
+      this.selector = selector;
+   }
+
+   @Override
+   public void run()
+   {
+      SocketChannel socketChannel = null;
+      try
+      {
+         // 接受连接请求
+         socketChannel = serverSocketChannel.accept();
+         socketChannel.configureBlocking(false);
+         // 将通道注册到选择器上，并且监听read事件
+         SelectionKey selectionKey = socketChannel.register(selector, SelectionKey.OP_READ);
+         // 新建一个Handler对象作为附带对象
+         selectionKey.attach(new Handler(socketChannel));
+      }
+      catch (IOException e)
+      {
+         e.printStackTrace();
+      }
+
+   }
+}
+```
+
+```java
+public class Handler implements Runnable
+{
+
+   private SocketChannel socketChannel;
+
+   public Handler(SocketChannel socketChannel)
+   {
+      this.socketChannel = socketChannel;
+   }
+
+   @Override
+   public void run()
+   {
+      ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+      try
+      {
+         int read = socketChannel.read(byteBuffer);
+         if (read > 0)
+         {
+            System.out.println(new String(byteBuffer.array()));
+         }
+      }
+      catch (IOException e)
+      {
+         e.printStackTrace();
+      }
+   }
+
+}
+```
+
