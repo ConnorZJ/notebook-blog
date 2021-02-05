@@ -105,81 +105,84 @@ I/O复用结合线程池，就是Reactor模式基本设计思想。
 
 ### Reactor单线程
 
-#### 代码实例
+#### 模型图例
+
+![](https://connorzj.oss-cn-shenzhen.aliyuncs.com/blog-pic/Reactor单线程模式.png)
+
+通过图例可以知道，在应用程序中，有多个客户端Client能够发起请求，连接到服务器端。然后由服务器端的Reactor中的Dispatcher来分发请求，先讲请求发送给Acceptor进行连接操作；连接操作成功后，再转交给Handler去进行具体的业务操作。
+
+单线程的Reactor模型就是这么的简单明了，了解了之后，很容易就能通过图例去进行简单的编码操作。
+
+#### 代码示例
 
 根据模型图例，可以得出以下代码
 
 ```java
-public class SingleThreadReactor implements Runnable
-{
+/**
+ * Reactor单线程模型
+ * @author connor
+ */
+public class SingleThreadReactor implements Runnable {
 
-   // 定义服务器通道、选择器和端口
-   private ServerSocketChannel serverSocketChannel;
-   private Selector selector;
-   private static final int PORT = 6666;
+    /**
+     * 定义服务器通道、选择器和端口
+     */
+    private ServerSocketChannel serverSocketChannel;
+    private Selector selector;
+    private static final int PORT = 6666;
 
-   /**
-    * 在构造方法中，初始化属性
-    *
-    * @throws IOException
-    */
-   public SingleThreadReactor() throws IOException
-   {
-      serverSocketChannel = ServerSocketChannel.open();
-      // 设置非阻塞
-      serverSocketChannel.configureBlocking(false);
-      // 绑定端口
-      serverSocketChannel.socket().bind(new InetSocketAddress(PORT));
-      selector = Selector.open();
-      // 将通道注册到选择器上，监听accept事件，并且新建一个Acceptor对象作为附带对象
-      serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, new Acceptor(serverSocketChannel, selector));
-   }
+    /**
+     * 在构造方法中，初始化属性
+     *
+     * @throws IOException
+     */
+    public SingleThreadReactor() throws IOException {
+        serverSocketChannel = ServerSocketChannel.open();
+        // 设置非阻塞
+        serverSocketChannel.configureBlocking(false);
+        // 绑定端口
+        serverSocketChannel.socket().bind(new InetSocketAddress(PORT));
+        selector = Selector.open();
+        // 将通道注册到选择器上，监听accept事件，并且新建一个Acceptor对象作为附带对象
+        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, new Acceptor(serverSocketChannel, selector));
+    }
 
-   @Override
-   public void run()
-   {
-      while (true)
-      {
-         try
-         {
-            int select = selector.select();
-            if (select > 0)
-            {
-               // 取出已发生事件的selectionKeys
-               Set<SelectionKey> selectionKeys = selector.selectedKeys();
-               Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
-               while (keyIterator.hasNext())
-               {
-                  SelectionKey selectionKey = keyIterator.next();
-                  // 使用分发器分发事件
-                  dispatcher(selectionKey);
-                  keyIterator.remove();
-               }
+    @Override
+    public void run() {
+        while (true) {
+            try {
+                int select = selector.select();
+                if (select > 0) {
+                    // 取出已发生事件的selectionKeys
+                    Set<SelectionKey> selectionKeys = selector.selectedKeys();
+                    Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
+                    while (keyIterator.hasNext()) {
+                        SelectionKey selectionKey = keyIterator.next();
+                        // 使用分发器分发事件
+                        dispatcher(selectionKey);
+                        keyIterator.remove();
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-         }
-         catch (IOException e)
-         {
-            e.printStackTrace();
-         }
-      }
-   }
+        }
+    }
 
-   /**
-    * 分发事件
-    *
-    * @param selectionKey
-    */
-   private void dispatcher(SelectionKey selectionKey)
-   {
-      Runnable runnable = (Runnable) selectionKey.attachment();
-      runnable.run();
-   }
+    /**
+     * 分发事件
+     *
+     * @param selectionKey
+     */
+    private void dispatcher(SelectionKey selectionKey) {
+        Runnable runnable = (Runnable) selectionKey.attachment();
+        runnable.run();
+    }
 
-   public static void main(String[] args) throws IOException
-   {
-      SingleThreadReactor str = new SingleThreadReactor();
-      str.run();
-   }
+    public static void main(String[] args) throws IOException {
+        SingleThreadReactor str = new SingleThreadReactor();
+        str.run();
+    }
 
 }
 ```
@@ -187,44 +190,43 @@ public class SingleThreadReactor implements Runnable
 依据图例，是一个Reactor接受来自客户端的请求，然后通过分发器将请求分发到Acceptor和Handler上。
 
 ```java
-public class Acceptor implements Runnable
-{
-   // 定义通道和选择器
-   private ServerSocketChannel serverSocketChannel;
-   private Selector selector;
+/**
+ * 接收器
+ *
+ * @author connor
+ */
+public class Acceptor implements Runnable {
+    // 定义通道和选择器
+    private ServerSocketChannel serverSocketChannel;
+    private Selector selector;
 
-   /**
-    * 构造方法中，初始化属性
-    *
-    * @param serverSocketChannel
-    * @param selector
-    */
-   public Acceptor(ServerSocketChannel serverSocketChannel, Selector selector)
-   {
-      this.serverSocketChannel = serverSocketChannel;
-      this.selector = selector;
-   }
+    /**
+     * 构造方法中，初始化属性
+     *
+     * @param serverSocketChannel
+     * @param selector
+     */
+    public Acceptor(ServerSocketChannel serverSocketChannel, Selector selector) {
+        this.serverSocketChannel = serverSocketChannel;
+        this.selector = selector;
+    }
 
-   @Override
-   public void run()
-   {
-      SocketChannel socketChannel = null;
-      try
-      {
-         // 接受连接请求
-         socketChannel = serverSocketChannel.accept();
-         socketChannel.configureBlocking(false);
-         // 将通道注册到选择器上，并且监听read事件
-         SelectionKey selectionKey = socketChannel.register(selector, SelectionKey.OP_READ);
-         // 新建一个Handler对象作为附带对象
-         selectionKey.attach(new Handler(socketChannel));
-      }
-      catch (IOException e)
-      {
-         e.printStackTrace();
-      }
+    @Override
+    public void run() {
+        SocketChannel socketChannel = null;
+        try {
+            // 接受连接请求
+            socketChannel = serverSocketChannel.accept();
+            socketChannel.configureBlocking(false);
+            // 将通道注册到选择器上，并且监听read事件
+            SelectionKey selectionKey = socketChannel.register(selector, SelectionKey.OP_READ);
+            // 新建一个Handler对象作为附带对象
+            selectionKey.attach(new Handler(socketChannel));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-   }
+    }
 }
 ```
 
@@ -240,23 +242,107 @@ public class Handler implements Runnable
    }
 
    @Override
-   public void run()
-   {
-      ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
-      try
-      {
-         int read = socketChannel.read(byteBuffer);
-         if (read > 0)
-         {
-            System.out.println(new String(byteBuffer.array()));
-         }
-      }
-      catch (IOException e)
-      {
-         e.printStackTrace();
-      }
-   }
+    public void run() {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        try {
+            int read = socketChannel.read(byteBuffer);
+            if (read > 0) {
+                System.out.println("客户端：" + socketChannel.getRemoteAddress() + "发来消息：" + new String(byteBuffer.array()));
+                socketChannel.write(ByteBuffer.wrap(("来自服务端：" + socketChannel.getLocalAddress() + "的响应成功...").getBytes(StandardCharsets.UTF_8)));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
 }
 ```
+
+测试结果为：
+
+![](https://connorzj.oss-cn-shenzhen.aliyuncs.com/blog-pic/Reactor代码测试结果1.png)
+
+![](https://connorzj.oss-cn-shenzhen.aliyuncs.com/blog-pic/Reactor代码测试结果2.png)
+
+#### Reactor单线程模型的优缺点
+
+Reactor单线程模型的优点是模型简单，没有多线程，所以少了多核竞争资源的问题。
+
+但单线程模型缺点也很明显，那就是一个线程无法发挥多核CPU的优势，在Handler线程处理时，会产生阻塞，无法发挥NIO一个线程真正处理多个客户端的优势。
+
+### Reactor多线程模型
+
+#### 模型图例
+
+![](https://connorzj.oss-cn-shenzhen.aliyuncs.com/blog-pic/Reactor多线程模型.png)
+
+Reactor多线程比单线程多的一个地方就是，Handler不再自己单线程的处理业务，而是交由一个线程池，每次有东西需要执行的时候，都让线程池起一个线程去执行，而Handler不用阻塞在那里，线程执行完了之后，自行将结果写入通道中，返回给客户端。
+
+#### 代码示例
+
+下列代码与单线程模型代码基本一致，只是增加了一个Process类。
+
+```java
+/**
+ * 处理器
+ *
+ * @author connor
+ */
+public class Handler implements Runnable {
+
+    private ExecutorService executors = Executors.newFixedThreadPool(2);
+
+    private SocketChannel socketChannel;
+
+    public Handler(SocketChannel socketChannel) {
+        this.socketChannel = socketChannel;
+    }
+
+    @Override
+    public void run() {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        executors.execute(new Process(socketChannel, byteBuffer));
+    }
+
+}
+```
+
+```java
+/**
+ * 操作
+ *
+ * @author connor
+ */
+public class Process implements Runnable {
+
+    private SocketChannel socketChannel;
+    private ByteBuffer byteBuffer;
+
+    public Process(SocketChannel socketChannel, ByteBuffer byteBuffer) {
+        this.socketChannel = socketChannel;
+        this.byteBuffer = byteBuffer;
+    }
+
+    @Override
+    public void run() {
+        try {
+            int read = socketChannel.read(byteBuffer);
+            if (read > 0) {
+                System.out.println("客户端：" + socketChannel.getRemoteAddress() + "发来消息：" + new String(byteBuffer.array()));
+                socketChannel.write(ByteBuffer.wrap(("来自服务端：" + socketChannel.getLocalAddress() + "的响应成功...").getBytes(StandardCharsets.UTF_8)));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+代码运行结果如下：
+
+![](https://connorzj.oss-cn-shenzhen.aliyuncs.com/blog-pic/Reactor多线程结果1.png)
+
+![](https://connorzj.oss-cn-shenzhen.aliyuncs.com/blog-pic/Reactor多线程结果2.png)
+
+#### Reactor多线程模型优缺点
 
