@@ -346,3 +346,187 @@ public class Process implements Runnable {
 
 #### Reactor多线程模型优缺点
 
+1. 优点：可以充分的利用多核 cpu 的处理能力
+2. 缺点：多线程数据共享和访问比较复杂，Reactor 处理所有的事件的监听和响应，在单线程运行，在高并发场景容易出现性能瓶颈。
+
+### Reactor主从模型
+
+#### 模型图例
+
+![](https://connorzj.oss-cn-shenzhen.aliyuncs.com/blog-pic/Reactor主从模型.png)
+
+1. `Reactor` 主线程 `MainReactor` 对象通过 `select` 监听连接事件，收到事件后，通过 `Acceptor` 处理连接事件
+2. 当 `Acceptor` 处理连接事件后，`MainReactor` 将连接分配给 `SubReactor`
+3. `subreactor` 将连接加入到连接队列进行监听，并创建 `handler` 进行各种事件处理
+4. 当有新事件发生时，`subreactor` 就会调用对应的 `handler` 处理
+5. `handler` 通过 `read` 读取数据，分发给后面的 `worker` 线程处理
+6. `worker` 线程池分配独立的 `worker` 线程进行业务处理，并返回结果
+7. `handler` 收到响应的结果后，再通过 `send` 将结果返回给 `client`
+8. `Reactor` 主线程可以对应多个 `Reactor` 子线程，即 `MainRecator` 可以关联多个 `SubReactor`
+
+#### 代码示例
+
+```java
+public class Reactor implements Runnable {
+    private ServerSocketChannel serverSocketChannel;
+
+    private Selector selector;
+
+    public Reactor(int port) {
+        try {
+            serverSocketChannel = ServerSocketChannel.open();
+            selector = Selector.open();
+            serverSocketChannel.configureBlocking(false);
+            serverSocketChannel.socket().bind(new InetSocketAddress(port));
+            SelectionKey selectionKey = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+            selectionKey.attach(new Acceptor(serverSocketChannel));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                selector.select();
+                Set<SelectionKey> selectionKeys = selector.selectedKeys();
+                Iterator<SelectionKey> iterator = selectionKeys.iterator();
+                while (iterator.hasNext()) {
+                    SelectionKey selectionKey = iterator.next();
+                    dispatcher(selectionKey);
+                    iterator.remove();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void dispatcher(SelectionKey selectionKey) {
+        Runnable runnable = (Runnable) selectionKey.attachment();
+        runnable.run();
+    }
+    
+    public static void main(String[] args) {
+        Reactor reactor = new Reactor(9090);
+        reactor.run();
+    }
+    
+}
+```
+
+```java
+public class Acceptor implements Runnable {
+    private ServerSocketChannel serverSocketChannel;
+    private final int CORE = 8;
+
+    private int index;
+
+    private SubReactor[] subReactors = new SubReactor[CORE];
+    private Thread[] threads = new Thread[CORE];
+    private final Selector[] selectors = new Selector[CORE];
+
+    public Acceptor(ServerSocketChannel serverSocketChannel) {
+        this.serverSocketChannel = serverSocketChannel;
+        for (int i = 0; i < CORE; i++) {
+            try {
+                selectors[i] = Selector.open();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            subReactors[i] = new SubReactor(selectors[i]);
+            threads[i] = new Thread(subReactors[i]);
+            threads[i].start();
+        }
+    }
+
+    @Override
+    public void run() {
+        try {
+            System.out.println("acceptor thread:" + Thread.currentThread().getName());
+            SocketChannel socketChannel = serverSocketChannel.accept();
+            System.out.println("有客户端连接上来了," + socketChannel.getRemoteAddress());
+            socketChannel.configureBlocking(false);
+            selectors[index].wakeup();
+            SelectionKey selectionKey = socketChannel.register(selectors[index], SelectionKey.OP_READ);
+            selectionKey.attach(new WorkHandler(socketChannel));
+            if (++index == threads.length) {
+                index = 0;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+```java
+public class SubReactor implements Runnable {
+    private Selector selector;
+
+    public SubReactor(Selector selector) {
+        this.selector = selector;
+    }
+
+
+    @Override
+    public void run() {
+        while (true) {
+            try {
+                selector.select();
+                System.out.println("selector:" + selector.toString() + "thread:" + Thread.currentThread().getName());
+                Set<SelectionKey> selectionKeys = selector.selectedKeys();
+                Iterator<SelectionKey> iterator = selectionKeys.iterator();
+                while (iterator.hasNext()) {
+                    SelectionKey selectionKey = iterator.next();
+                    dispatcher(selectionKey);
+                    iterator.remove();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void dispatcher(SelectionKey selectionKey) {
+        Runnable runnable = (Runnable) selectionKey.attachment();
+        runnable.run();
+    }
+}
+```
+
+```java
+public class WorkHandler implements Runnable {
+    private SocketChannel socketChannel;
+
+    public WorkHandler(SocketChannel socketChannel) {
+        this.socketChannel = socketChannel;
+    }
+
+    @Override
+    public void run() {
+        try {
+            ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+            socketChannel.read(byteBuffer);
+            String message = new String(byteBuffer.array(), StandardCharsets.UTF_8);
+            System.out.println(socketChannel.getRemoteAddress() + "发来的消息是:" + message);
+            socketChannel.write(ByteBuffer.wrap("你的消息我收到了".getBytes(StandardCharsets.UTF_8)));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+#### Reactor主从模型优缺点
+
+优点：父线程与子线程的数据交互简单职责明确，父线程只需要接收新连接，子线程完成后续的业务处理。而且父线程与子线程的交互也比较简单，主线程只需要把新连接传给子线程，子线程无需返回数据。
+
+缺点：能看得到，主从模型还是非常复杂的，代码量也非常多。
+
+## Netty的模型
+
+说了这么多，我们的主线——Netty还没有讲到。
+
+其实Netty采用的就是上述的Reactor主从模型，而且在其上还进一步改进了许多。接下来还要深入的理解学习，才能通俗的把Netty的知识分享出来。敬请期待！
