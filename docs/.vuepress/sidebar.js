@@ -24,7 +24,14 @@ module.exports = {
 		title: 'Netty',
 		children: [
 			'Java_BIO',
-			'Java_NIO'
+			'Java_NIO',
+			'Netty_Base'
+		]
+	}],
+	'/Redis/': [{
+		title: 'Redis设计与实现',
+		children: [
+			'Redis_Data_Struct'
 		]
 	}]
 }

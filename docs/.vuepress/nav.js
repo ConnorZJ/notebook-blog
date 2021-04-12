@@ -13,5 +13,9 @@ module.exports = [
 	{
 		text: 'Netty',
 		link: '/Netty/'
+	},
+	{
+		text: 'Redis',
+		link: '/Redis/'
 	}
 ];
