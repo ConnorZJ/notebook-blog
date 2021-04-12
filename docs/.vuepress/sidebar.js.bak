@@ -28,5 +28,10 @@ module.exports = {
 			'Netty_Base'
 		]
 	}],
-	'/Redis/': require('../Redis/sidebar')
+	'/Redis/': [{
+		title: 'Redis设计与实现',
+		children: [
+			'Redis_Data_Struct'
+		]
+	}]
 }
