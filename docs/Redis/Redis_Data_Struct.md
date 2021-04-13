@@ -199,3 +199,50 @@ typedef struct list {
 3. 带表头指针和表尾指针：通过list对象获取头节点和尾结点的时间复杂度是O(1)；
 4. 带链表长度计数器：通过list对象的len属性获取链表的长度的时间复杂度是O(1)；
 5. 多态：链表节点使用void*指针来保存节点值，并且可以通过list结构的dup、free、match三个属性为节点值设置类型特定函数，所以链表可以用于保存各种不同类型的值。
+
+## 字典
+
+### 概述
+
+redis的字典是由哈希表来实现的，与哈希表类似的概念也相当于Java中的HashTable，一个哈希表中包含多个哈希节点，每个哈希节点都是有个键值对来组成的。同样在C语言中并没有实现这种结构，所以redis自己实现了。
+
+### 字典的定义
+
+首先介绍一个哈希节点，定义如下：
+
+```c
+typedef struct dictEntry {
+    // 键
+    void *key;
+    // 值
+    union {
+        void *val;
+        uint64_t u64;
+        int64_t s64;
+    } v;
+    // 指向下个哈希节点的指针，形成链表
+    struct dictEntry *next;
+} dictEntry;
+```
+
+key属性保存的是键值对中的键，那么v属性保存就是值，可以看出，v可以是一个指针，也可以是uint64_t类型整数，也可以是int64_t类型整数。
+
+next属性表示该哈希节点指向下一个哈希节点的指针，之所以需要指向下一个，就是因为在哈希冲突发生的时候，将发生冲突的节点组成一个链表，通过这种方式来解决哈希冲突。
+
+<img src="https://connorzj.oss-cn-shenzhen.aliyuncs.com/blog-pic/20210414001117.png" style="zoom:50%;" />
+
+接下来来介绍一下哈希表了，结构定义如下所示：
+
+```c
+typedef struct dictht {
+    // 哈希表数组
+    dictEntry **table;
+    // 哈希表大小
+    unsigned long size;
+    // 哈希表大小的掩码，用于计算索引值，值总是为size-1
+    unsigned long sizemask;
+    // 哈希表已包含的节点数量
+    unsigned long used;
+} dictht;
+```
+
